@@ -19,14 +19,14 @@ if (!databaseUrl || !jwtSecret) {
 @Module({
   imports: [
     MongooseModule.forRoot(databaseUrl),
+    JwtModule.register({
+      secret: jwtSecret,
+      signOptions: { expiresIn: '600s' }, 
+    }),
     UserModule,
     CategoryModule,
     ProductModule,
     CartModule,
-    JwtModule.register({
-      secret: jwtSecret,
-      signOptions: { expiresIn: '6000s' }, 
-    }),
   ],
 })
 export class AppModule {}

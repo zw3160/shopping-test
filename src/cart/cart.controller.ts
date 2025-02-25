@@ -13,30 +13,30 @@ export class CartController {
   @Post('add')
   async addProductToCart(
     @Request() req: any, 
-    @Body('productId') productId: string,
+    @Body('productName') productName: string,
     @Body('amount') amount: number,
   ): Promise<Cart> {
     const token = req.headers.authorization.split(' ')[1]; 
-    return this.cartService.addProductToCart(token, productId, amount);
+    return this.cartService.addProductToCart(token, productName, amount);
   }
 
   @Post('change')
   async changeProductInCart(
     @Request() req: any, 
-    @Body('productId') productId: string,
+    @Body('productName') productName: string,
     @Body('amount') amount: number,
   ): Promise<Cart> {
     const token = req.headers.authorization.split(' ')[1]; 
-    return this.cartService.changeProductInCart(token, productId, amount);
+    return this.cartService.changeProductInCart(token, productName, amount);
   }
 
   @Post('delete')
   async deleteProductFromCart(
     @Request() req: any, 
-    @Body('productId') productId: string,
+    @Body('productName') productName: string,
   ): Promise<Cart> {
     const token = req.headers.authorization.split(' ')[1]; 
-    return this.cartService.deleteProductFromCart(token, productId);
+    return this.cartService.deleteProductFromCart(token, productName);
   }
 
   @Get('get')

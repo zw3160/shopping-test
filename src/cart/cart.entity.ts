@@ -5,8 +5,8 @@ export type CartDocument = Cart & Document;
 
 @Schema()
 export class Cart {
-  @Prop({ type: [{ productId: String, amount: Number }] })
-  items: { productId: string; amount: number }[];
+  @Prop({ type: [{ productName: String, amount: Number }] })
+  items: { productName: string; amount: number }[];
 
   @Prop({ required: true })
   price: number;

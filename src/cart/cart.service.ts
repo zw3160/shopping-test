@@ -24,38 +24,38 @@ export class CartService {
     return user;
   }
 
-  async addProductToCart(jwtToken: string, productId: string, amount: number = 1): Promise<Cart> {
+  async addProductToCart(jwtToken: string, productName: string, amount: number = 1): Promise<Cart> {
     const user = await this.getUserFromToken(jwtToken);
     
     user.cart = user.cart || { items: [], price: 0 };
-    const existingItem = user.cart.items.find(item => item.productId === productId);
+    const existingItem = user.cart.items.find(item => item.productName === productName);
     
     if (existingItem) {
       existingItem.amount += amount; 
     } else {
-      user.cart.items.push({ productId, amount }); 
+      user.cart.items.push({ productName, amount }); 
     }
 
-    const price = await this.productService.getPrice(productId);
+    const price = await this.productService.getPrice(productName);
     price && (user.cart.price += amount * price);
 
     await user.save();
     return user.cart;
   }
 
-  async changeProductInCart(jwtToken: string, productId: string, newAmount: number): Promise<Cart> {
+  async changeProductInCart(jwtToken: string, productName: string, newAmount: number): Promise<Cart> {
     const user = await this.getUserFromToken(jwtToken);
 
     if (!user.cart) {
       throw new NotFoundException('Cart not found');
     }
 
-    const item = user.cart.items.find(item => item.productId === productId);
+    const item = user.cart.items.find(item => item.productName === productName);
     if (!item) {
       throw new NotFoundException('Product not found in cart');
     }
 
-    const price = await this.productService.getPrice(productId);
+    const price = await this.productService.getPrice(productName);
     price && (user.cart.price += (newAmount - item.amount) * price)
     item.amount = newAmount;
     
@@ -63,22 +63,22 @@ export class CartService {
     return user.cart;
   }
 
-  async deleteProductFromCart(jwtToken: string, productId: string): Promise<Cart> {
+  async deleteProductFromCart(jwtToken: string, productName: string): Promise<Cart> {
     const user = await this.getUserFromToken(jwtToken);
   
     if (!user.cart) {
       throw new NotFoundException('Cart not found');
     }
   
-    const item = user.cart.items.find(item => item.productId === productId);
+    const item = user.cart.items.find(item => item.productName === productName);
     if (!item) {
       throw new NotFoundException('Product not found in cart');
     }
   
-    const price = await this.productService.getPrice(productId);
+    const price = await this.productService.getPrice(productName);
     price && (user.cart.price -= item.amount * price)
   
-    user.cart.items = user.cart.items.filter(item => item.productId !== productId); 
+    user.cart.items = user.cart.items.filter(item => item.productName !== productName); 
     await user.save();
     return user.cart;
   }

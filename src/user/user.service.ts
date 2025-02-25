@@ -9,7 +9,7 @@ import { User, UserDocument } from './user.entity';
 export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private jwtService: JwtService,
+    private readonly jwtService: JwtService,
   ) {}
 
   async findUserByUsername(username: string): Promise<User | null> {
