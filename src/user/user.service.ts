@@ -14,7 +14,7 @@ export class UserService {
   ) {}
 
   async findUserByUsername(username: string): Promise<User | null> {
-    return this.userModel.findOne({ username }).exec();
+    return this.userModel.findOne({ username });
   }
 
   async register(username: string, password: string): Promise<User> {
@@ -27,7 +27,7 @@ export class UserService {
     const user = await this.findUserByUsername(username);
 
     if (!user) {
-      throw new HttpException(`user ${username} is not registered, please sign in`, HttpStatus.UNAUTHORIZED);
+      throw new HttpException(`user name or password are not correct`, HttpStatus.UNAUTHORIZED);
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -41,7 +41,7 @@ export class UserService {
   }
 
   async getUsers(): Promise<User[]> {
-    return this.userModel.find().exec();
+    return this.userModel.find();
   }
 
   private extractUserIdFromToken(token: string): string | undefined {
@@ -61,7 +61,7 @@ export class UserService {
 
   async getUserFromToken(jwtToken: string): Promise<UserDocument> {
     const userId = this.extractUserIdFromToken(jwtToken);
-    const user = await this.userModel.findById(userId).exec();
+    const user = await this.userModel.findById(userId);
     
     if (!user) {
       throw new NotFoundException('User not found');
@@ -71,7 +71,7 @@ export class UserService {
   }
 
   async updateUserCart(cartId: Types.ObjectId, userId: string) {
-    const user = await this.userModel.findById(userId).exec();
+    const user = await this.userModel.findById(userId)
     if (!user) {
       throw new NotFoundException('User not found');
     }

@@ -27,11 +27,11 @@ export class ProductService {
   }
 
   async getProducts(category: string): Promise<Product[]> {
-    return category ? this.productModel.find({ category }).exec() : this.productModel.find().exec();
+    return category ? this.productModel.find({ category }) : this.productModel.find();
   }
 
   async getPrice(name: string): Promise<number | undefined> {
-    const product = await this.productModel.findOne({ name }).exec();
-    return product ? product.price : undefined;
+    const product = await this.productModel.findOne({ name }, 'price'); 
+    return product?.price;
   }
 }
