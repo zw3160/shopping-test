@@ -1,111 +1,105 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import * as jwt from 'jsonwebtoken';
-import { Model } from 'mongoose';
-import { User, UserDocument } from '../user/user.entity'; 
+import { Model, Types } from 'mongoose';
 import { ProductService } from '../product/product.service';
-import { Cart } from './cart.entity'; 
+import { Cart, CartDocument } from './cart.entity'; 
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class CartService {
   constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Cart.name) private cartModel: Model<CartDocument>,
     private productService: ProductService,
+    private userService: UserService,
   ) {}
 
-  private async getUserFromToken(jwtToken: string): Promise<UserDocument> {
-    const userId = this.extractUserIdFromToken(jwtToken);
-    const user = await this.userModel.findById(userId).exec();
-    
-    if (!user) {
-      throw new NotFoundException('User not found');
+  async createCart(user): Promise<CartDocument> {
+    const cart = new this.cartModel({ items: [] });
+    await cart.save();
+    await this.userService.updateUserCart(cart._id, user._id);
+    return cart;
+}
+
+  async getCartById(cartId: Types.ObjectId): Promise<CartDocument> {
+    const cart = await this.cartModel.findById(cartId);
+    if (!cart) {
+      throw new Error(`Cart ${cartId} not found`);
     }
-    
-    return user;
+    return cart;
   }
 
   async addProductToCart(jwtToken: string, productName: string, amount: number = 1): Promise<Cart> {
-    const user = await this.getUserFromToken(jwtToken);
+    const user = await this.userService.getUserFromToken(jwtToken);
+
+    const cart = user.cart ? await this.getCartById(user.cart) : await this.createCart(user);
     
-    user.cart = user.cart || { items: [], price: 0 };
-    const existingItem = user.cart.items.find(item => item.productName === productName);
+    const existingItem = cart.items.find(item => item.productName === productName);
     
     if (existingItem) {
       existingItem.amount += amount; 
     } else {
-      user.cart.items.push({ productName, amount }); 
+      cart.items.push({ productName, amount }); 
     }
+  
+    return cart.save(); 
+  }
 
-    const price = await this.productService.getPrice(productName);
-    price && (user.cart.price += amount * price);
+  private async findCart(jwtToken: string) :  Promise<CartDocument>{
+    const user = await this.userService.getUserFromToken(jwtToken);
+    if (!user.cart) {
+      throw new NotFoundException('User not have a cart');
+    }
+    return this.getCartById(user.cart) 
+  }
 
-    await user.save();
-    return user.cart;
+  private findItemInCart(cart: CartDocument, productName: string) :  { productName: string; amount: number; } {
+    const item = cart.items.find(item => item.productName === productName);
+    if (!item) {
+      throw new NotFoundException('Product not found in cart');
+    }
+    return item;
   }
 
   async changeProductInCart(jwtToken: string, productName: string, newAmount: number): Promise<Cart> {
-    const user = await this.getUserFromToken(jwtToken);
-
-    if (!user.cart) {
-      throw new NotFoundException('Cart not found');
+    try {
+      const cart = await this.findCart(jwtToken);
+      const item = this.findItemInCart(cart, productName);
+      item.amount = newAmount;
+      return cart.save();
+    } catch (error) {
+      console.log(`failure during changeProductInCart err: ${error}`)
+      throw error;
     }
-
-    const item = user.cart.items.find(item => item.productName === productName);
-    if (!item) {
-      throw new NotFoundException('Product not found in cart');
-    }
-
-    const price = await this.productService.getPrice(productName);
-    price && (user.cart.price += (newAmount - item.amount) * price)
-    item.amount = newAmount;
-    
-    await user.save();
-    return user.cart;
   }
 
   async deleteProductFromCart(jwtToken: string, productName: string): Promise<Cart> {
-    const user = await this.getUserFromToken(jwtToken);
-  
-    if (!user.cart) {
-      throw new NotFoundException('Cart not found');
-    }
-  
-    const item = user.cart.items.find(item => item.productName === productName);
-    if (!item) {
-      throw new NotFoundException('Product not found in cart');
-    }
-  
-    const price = await this.productService.getPrice(productName);
-    price && (user.cart.price -= item.amount * price)
-  
-    user.cart.items = user.cart.items.filter(item => item.productName !== productName); 
-    await user.save();
-    return user.cart;
-  }
-
-  async getCart(jwtToken: string): Promise<Cart> {
-    const user = await this.getUserFromToken(jwtToken);
-    
-    if (!user.cart) {
-      throw new NotFoundException('Cart not found');
-    }
-    
-    return user.cart; 
-  }
-
-  private extractUserIdFromToken(token: string): string | undefined {
     try {
-      const jwtSecret = process.env.JWT_SECRET;
-      if (!jwtSecret) {
-        throw new Error('JWT_SECRET is not defined');
-      }
-  
-      const decoded = jwt.verify(token, jwtSecret); 
-      return typeof decoded['sub'] === 'string' ? decoded['sub'] : undefined;
+      const cart = await this.findCart(jwtToken);
+      const item = this.findItemInCart(cart, productName);
+      cart.items = item && cart.items.filter(item => item.productName !== productName); 
+      return cart.save();
     } catch (error) {
-      console.error('Error verifying token:', error);
-      throw new NotFoundException('Invalid token: ' + error.message);
+      console.log(`failure during deleteProductFromCart err: ${error}`)
+      throw error;
     }
   }
+
+  async calculateTotalPrice(items) {
+    return Promise.all(
+      items.map(async (item) => {
+        const price = await this.productService.getPrice(item.productName);
+        return price && (item.amount * price);
+      })
+    ).then(prices => prices.reduce((acc, curr) => acc + curr, 0));
+  }
+  
+  async getCart(jwtToken: string): Promise<{cart: Cart, price: number}> {
+    const cart = await this.findCart(jwtToken);
+    const price = await this.calculateTotalPrice(cart.items);
+    
+    return { cart, price }; 
+  }
+
+
   
 }

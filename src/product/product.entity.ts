@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, ObjectId } from 'mongoose';
 
 export type ProductDocument = Product & Document;
 
@@ -14,7 +14,7 @@ export class Product {
   @Prop({ type: String, ref: 'Category' }) 
   category?: string;
 
-  _id?: string;
+  _id?: ObjectId;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

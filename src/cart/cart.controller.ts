@@ -42,7 +42,7 @@ export class CartController {
   @Get('get')
   async getCart(
     @Request() req: any, 
-  ): Promise<Cart> {
+  ): Promise<{cart: Cart, price: number}> {
     const token = req.headers.authorization.split(' ')[1]; 
     return this.cartService.getCart(token);
   }

@@ -1,2 +1,2 @@
-# shopping-test
-nest js test for Misrad Habitahon
+# shopping-assignment 
+nest js assignment for Misrad Habitahon

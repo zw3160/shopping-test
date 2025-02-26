@@ -18,6 +18,6 @@ import { UserController } from './user.controller';
   ],
   providers: [UserService, JwtStrategy],
   controllers: [UserController],
-  exports: [PassportModule, JwtModule, MongooseModule],
+  exports: [PassportModule, JwtModule, MongooseModule, UserService],
 })
 export class UserModule {}

@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
-import { Cart, CartSchema } from '../cart/cart.entity';
+import { Document, Types } from 'mongoose'; 
 
 export type UserDocument = User & Document;
 
@@ -12,12 +11,10 @@ export class User {
   @Prop({ required: true })
   password: string;
 
-  @Prop({ type: CartSchema }) 
-  cart?: Cart; 
+  @Prop({ type: Types.ObjectId, ref: 'Cart' }) 
+  cart?: Types.ObjectId; 
 
-  _id?: string;
+  _id?: Types.ObjectId;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
-
-
