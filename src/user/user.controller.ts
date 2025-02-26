@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get } from '@nestjs/common';
+import { Controller, Post, Body, Get, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { UserService } from './user.service';
 
 @Controller('users')
@@ -14,6 +14,9 @@ export class UserController {
   @Post('login')
   async login(@Body() body: { username: string; password: string }) {
     const { username, password } = body;
+    if (!username || !password) {
+      throw new BadRequestException('Missing required parameters: username and password');
+    }
     return this.userService.login(username, password);
   }
 
