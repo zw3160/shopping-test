@@ -34,9 +34,9 @@ export class CartService {
     const cart = user.cart ? await this.getCartById(user.cart) : await this.createCart(user);
     
     const existingItem = cart.items.find(item => item.productName === productName);
-    
+
     if (existingItem) {
-      existingItem.amount += amount; 
+      existingItem.amount += +amount; 
     } else {
       cart.items.push({ productName, amount }); 
     }
